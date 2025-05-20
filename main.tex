@@ -93,8 +93,8 @@ Cette étude s’organise en trois volets : (1) un prétraitement des données p
 
 \section{Contexte et objectifs}
 
-\subsection{Objectif général}
-Quantifier et prévoir la dépense calorique pendant une séance de sport, en s’appuyant exclusivement sur les variables quantitatives (âge, poids, IMC, mesures cardiaques, pourcentage de masse grasse, etc.).
+\subsection{Problématique}
+Comment quantifier et prévoir la dépense calorique pendant une séance de sport, en s’appuyant exclusivement sur les variables quantitatives (âge, poids, IMC, mesures cardiaques, pourcentage de masse grasse, etc.) ?
 
 \subsection{Contraintes}
 \begin{itemize}
@@ -297,7 +297,7 @@ BMI & 63.95 \\
 \end{tabular}
 \end{table}
 
-Sur la base de ces résultats, \texttt{Weight} et \texttt{Height} sont retirés pour stabiliser le modèle.
+Sur la base de ces résultats, \texttt{Weight} et \texttt{BMI} sont retirés pour stabiliser le modèle.
 
 \subsection{Modèle sans variables colinéaires}
 Le modèle réajusté inclut : Age, Avg\_BPM, Resting\_BPM, Fat\_Percentage, Water\_Intake, BMI.
@@ -321,7 +321,7 @@ Avec :
 Une recherche exhaustive sur tous les sous-ensembles de variables permet de vérifier la robustesse de la sélection :
 \begin{itemize}
 \item 511 combinaisons évaluées par AIC, BIC, $R^2$, $R^2_{\text{ajusté}}$.
-\item Le meilleur modèle à 3 variables (Age, Avg\_BPM, Fat\_Percentage) présente un AIC minimal ($\sim$2098) et un $R^2_{\text{ajusté}}$ optimal ($\sim$0,499).
+\item Le meilleur modèle à 4 variables (Age, Height, Avg\_BPM, Fat\_Percentage) présente un AIC minimal ($\sim$2098) et un $R^2_{\text{ajusté}}$ optimal ($\sim$0,499).
 \end{itemize}
 
 \begin{figure}[H]
@@ -334,7 +334,7 @@ Une recherche exhaustive sur tous les sous-ensembles de variables permet de vér
 
 Validation croisée 10-fold sur les modèles complet, sans colinéarité et réduit :
 \begin{itemize}
-\item Scores moyens de MSE, MAE, $R^2$ très proches entre complet et réduit.
+\item Scores moyens de MSE, MAE, RMSE, $R^2$ très proches entre complet et réduit.
 \item Écart-type faible, confirmant la stabilité du modèle réduit.
 \end{itemize}
 
@@ -396,7 +396,7 @@ Chaque battement par minute (BPM) supplémentaire augmente la dépense d’envir
 Un point de pourcentage de masse grasse en plus correspond à une baisse de ~26,48 kcal, probablement en lien avec un métabolisme de base plus faible chez les sujets plus gras.
 
 \section{Conclusion}
-En conclusion, ce travail démontre que trois variables clés suffisent à expliquer près de 50 \% de la variabilité de la dépense calorique en séance de sport, facilitant l’interprétation et le déploiement du modèle. Les coefficients standardisés montrent que la fréquence cardiaque moyenne est le prédicteur le plus influent, suivi négativement par le pourcentage de masse grasse et l’âge. Ces conclusions offrent une base statistique solide pour adapter les programmes d’entraînement en fonction du profil physiologique des pratiquants. 
+En conclusion, ce travail démontre que quatres variables clés suffisent à expliquer près de 50 \% de la variabilité de la dépense calorique en séance de sport, facilitant l’interprétation et le déploiement du modèle. Les coefficients standardisés montrent que la fréquence cardiaque moyenne est le prédicteur le plus influent, suivi négativement par la taille, le pourcentage de masse grasse et l’âge. Ces conclusions offrent une base statistique solide pour adapter les programmes d’entraînement en fonction du profil physiologique des pratiquants. 
 
 \newpage
 \end{document}
