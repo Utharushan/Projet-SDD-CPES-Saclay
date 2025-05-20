@@ -113,7 +113,7 @@ Quantifier et prévoir la dépense calorique pendant une séance de sport, en s�
 \end{itemize}
 
 \textbf{Imputation}:
-Toutes les valeurs manquantes sont remplacées par la médiane de la variable, pour limiter l’impact des outliers sur l’estimation des paramètres.
+Le jeu de données ne contenait aucune valeur manquante.
 
 \textbf{Détection des outliers}:
 Application conjointe de la méthode IQR (points hors des bornes [Q1 – 1.5×IQR, Q3 + 1.5×IQR]) et du Z-score (|Z| > 3) pour repérer et documenter les observations extrêmes avant toute modélisation.
@@ -121,13 +121,13 @@ Application conjointe de la méthode IQR (points hors des bornes [Q1 – 1.5×IQ
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.7\linewidth]{distribution.png}
-  \caption{Distribution des différentes variables}
+  \caption{Distribution des variables continues}
 \end{figure}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.7\linewidth]{boxplot.png}
-  \caption{Boxplot des différentes variables}
+  \caption{Boxplot des variables continues}
 \end{figure}
 
 \subsection{Standardisation}
@@ -146,10 +146,11 @@ Historiques et boxplots montrent que la plupart des variables (poids, IMC, calor
 \subsection{Corrélations}
 La matrice de corrélation met en évidence :
 \begin{itemize}
-    \item Corrélation forte entre \texttt{Fat\_Percentage} et IMC (r = 0,75).
-    \item Corrélation modérée entre \texttt{Avg\_BPM} et calories brûlées (r = 0,45).
-    \item Faible corrélation de \texttt{Weight}, \texttt{Height} avec la cible une fois les autres variables prises en compte.
+    \item Corrélation forte entre \texttt{Fat\_Percentage} et \texttt{BMI} ($r = 0{,}75$).
+    \item Corrélation modérée entre \texttt{Avg\_BPM} et \texttt{Calories\_Burned} ($r = 0{,}45$).
+    \item Faible corrélation entre \texttt{Weight} et \texttt{Calories\_Burned}, ainsi qu’entre \texttt{Height} et \texttt{Calories\_Burned}, une fois les autres variables contrôlées.
 \end{itemize}
+
 
 \begin{figure}[H]
   \centering
@@ -158,6 +159,57 @@ La matrice de corrélation met en évidence :
 \end{figure}
 
 \section{Modélisation initiale et diagnostic}
+
+\subsection{Principe de la régression linéaire multiple}
+
+On dispose d’un jeu de données de \(n\) observations \(\{(x_{i1}, x_{i2}, \dots, x_{ip}, y_i)\}_{i=1}^n\), où \(y\) est la variable à expliquer et \(\{x_j\}_{j=1}^p\) sont les \(p\) variables explicatives continues. On cherche à ajuster le modèle linéaire suivant :
+\[
+y_i \;=\;\beta_0 + \beta_1\,x_{i1} + \beta_2\,x_{i2} + \cdots + \beta_p\,x_{ip} + \varepsilon_i,
+\]
+avec \(\varepsilon_i\) un terme d’erreur supposé centré (\(\mathbb{E}[\varepsilon_i]=0\)) et de variance constante (\(\mathrm{Var}(\varepsilon_i)=\sigma^2\)), indépendant et identiquement distribué.
+
+En notation matricielle :
+\[
+\mathbf{y} = X\,\boldsymbol{\beta} + \boldsymbol{\varepsilon},
+\]
+où
+\[
+\mathbf{y} = 
+\begin{pmatrix}
+y_1 \\ y_2 \\ \vdots \\ y_n
+\end{pmatrix},\quad
+X = 
+\begin{pmatrix}
+1 & x_{11} & x_{12} & \cdots & x_{1p} \\
+1 & x_{21} & x_{22} & \cdots & x_{2p} \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+1 & x_{n1} & x_{n2} & \cdots & x_{np}
+\end{pmatrix},\quad
+\boldsymbol{\beta} = 
+\begin{pmatrix}
+\beta_0 \\ \beta_1 \\ \vdots \\ \beta_p
+\end{pmatrix}.
+\]
+
+Les coefficients \(\boldsymbol{\beta}\) sont estimés par la méthode des moindres carrés ordinaires (OLS), minimisant la somme des carrés des résidus :
+\[
+\hat{\boldsymbol{\beta}}
+= \arg\min_{\boldsymbol{\beta}}
+(\mathbf{y} - X\boldsymbol{\beta})^\top(\mathbf{y} - X\boldsymbol{\beta})
+\;\;\implies\;\;
+\hat{\boldsymbol{\beta}} = (X^\top X)^{-1} X^\top \mathbf{y}.
+\]
+
+L’ajustement du modèle est ensuite évalué à l’aide de plusieurs indicateurs :
+\begin{itemize}
+  \item Le coefficient de détermination \(R^2 = 1 - \tfrac{\mathrm{SS}_{\mathrm{rés}}}{\mathrm{SS}_{\mathrm{tot}}}\), qui mesure la proportion de la variance expliquée.
+  \item Le \(R^2\) ajusté, qui pénalise l’ajout de variables non informatives :
+    \[
+      R^2_{\mathrm{ajusté}} = 1 - (1-R^2)\,\frac{n-1}{n-p-1}.
+    \]
+  \item Les tests de significativité (statistiques \(t\) pour chaque \(\beta_j\), test global \(F\)).
+  \item Les diagnostics de résidus et d’influence (qui vérifient l’homoscédasticité, la normalité des \(\varepsilon_i\), la présence de points influents, etc.).
+\end{itemize}
 
 \subsection{Régression linéaire multiple complète}
 \textbf{Résultats clés}:
@@ -170,11 +222,11 @@ La matrice de corrélation met en évidence :
 \subsection{Multicolinéarité}
 \textbf{VIF}:
 \begin{itemize}
-    \item \texttt{Poids} : VIF = 70 ; \texttt{Taille} : VIF = 20 ; \texttt{BMI} : VIF = 64 → colinéarité extrême.
+    \item \texttt{Weight} : VIF = 70 ; \texttt{Height} : VIF = 20 ; \texttt{BMI} : VIF = 64 → colinéarité extrême.
 \end{itemize}
 
 \textbf{Décision}:
-Exclusion de \texttt{Weight} et \texttt{Height}, puis réévaluation.
+Exclusion de \texttt{Weight} et \texttt{BMI}, puis réévaluation.
 
 \subsection{Modèle sans variables colinéaires}
 Ajout des prédicteurs \{\texttt{Age}, \texttt{Avg\_BPM}, \texttt{Resting\_BPM}, \texttt{Fat\_Percentage}, \texttt{Water\_Intake}, \texttt{BMI}\}
@@ -183,26 +235,6 @@ Ajout des prédicteurs \{\texttt{Age}, \texttt{Avg\_BPM}, \texttt{Resting\_BPM},
 \begin{itemize}
     \item VIF retombent tous < 2
     \item R² = 0,50, adj-R² = 0,49 → quasi-identique au modèle complet, diagnostic sensiblement plus stable.
-\end{itemize}
-
-\section{Sélection définitive : modèle réduit pas à pas}
-
-\subsection{Critère de significativité}
-Test F global de Fisher partiel pour regrouper les variables non-significatives (\texttt{Resting\_BPM}, \texttt{Water\_Intake}, \texttt{BMI}) : p > 0,1 → suppression simultanée légitime.
-
-\subsection{Modèle final}
-\textbf{Prédicteurs retenus}:
-\begin{itemize}
-    \item \texttt{Age} (coefficient négatif)
-    \item \texttt{Avg\_BPM} (coefficient positif le plus élevé)
-    \item \texttt{Fat\_Percentage} (coefficient négatif marqué)
-\end{itemize}
-
-\textbf{Performances}:
-\begin{itemize}
-    \item R² = 0,497 (49,7\%)
-    \item AIC = 2101, BIC = 2120 (amélioration vs modèle complet)
-    \item RMSE (standardisé) = 0,70 ; MAE = 0,52
 \end{itemize}
 
 \section{Diagnostics approfondis}
@@ -215,15 +247,23 @@ Test F global de Fisher partiel pour regrouper les variables non-significatives 
   \textbf{Test / Graphique} & \textbf{Valeur / Observation} \\
   \midrule
   QQ-plot              & Alignement satisfaisant sur la diagonale (normalité quasi-respectée) \\
-  Omnibus              & p = 0,00 (très sensible aux grands n ; compléter par JB) \\
-  Jarque–Bera          & p = \(10^{-18}\) (léger excès de kurtosis, acceptable) \\
-  Durbin–Watson        & = 2,10 (absence d’autocorrélation des résidus) \\
   Leverage (\(h_i\))   & Aucun point au-dessus de \(\tfrac{3(p+1)}{n}\) (p = 3) \\
   Cook’s D             & Toutes les distances < 0,5 → pas de points influents majeurs \\
-  Rainbow test         & p = 0,08 (> 0,05) → linéarité globale validée \\
   \bottomrule
   \end{tabular}
 \end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\linewidth]{cook.png}
+  \caption{Analyse de la distance de Cook}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\linewidth]{cooks_d.png}
+  \caption{Distribution des distances de Cook}
+\end{figure}
 
 \begin{figure}[H]
   \centering
@@ -277,29 +317,83 @@ Avec :
 \item RMSE = 0{,}70, MAE = 0{,}52
 \end{itemize}
 
-\section{Recherche exhaustive et comparaison de modèles}
+\section{Recherche exhaustive}
 Une recherche exhaustive sur tous les sous-ensembles de variables permet de vérifier la robustesse de la sélection :
 \begin{itemize}
 \item 511 combinaisons évaluées par AIC, BIC, $R^2$, $R^2_{\text{ajusté}}$.
 \item Le meilleur modèle à 3 variables (Age, Avg\_BPM, Fat\_Percentage) présente un AIC minimal ($\sim$2098) et un $R^2_{\text{ajusté}}$ optimal ($\sim$0,499).
 \end{itemize}
 
-\section{Validation croisée 5-fold et régularisation}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\linewidth]{information_criterion.png}
+  \caption{Évolution des Critères de Performance du Modèle en Fonction du Nombre de Variables}
+\end{figure}
 
-\subsection{Validation croisée}
-Validation croisée 5-fold sur les modèles complet, sans colinéarité et réduit :
+\section{Validation croisée 10-fold et régularisation}
+
+Validation croisée 10-fold sur les modèles complet, sans colinéarité et réduit :
 \begin{itemize}
 \item Scores moyens de MSE, MAE, $R^2$ très proches entre complet et réduit.
 \item Écart-type faible, confirmant la stabilité du modèle réduit.
 \end{itemize}
 
-\subsection{Ridge et Lasso}
-Modèles pénalisés ajustés avec sélection de $\alpha$ par validation croisée interne :
+\section{Résultats}
+
+Après ajustement sur les 973 observations, nous évaluons les deux modèles à l’aide des métriques \textit{MSE} et \textit{MAE} :
+
 \begin{itemize}
-\item Ridge optimal : $\alpha \approx 1{,}0$, MSE moyen $\sim$0,48
-\item Lasso optimal : $\alpha \approx 0{,}1$, MSE moyen $\sim$0,49
-\item Conclusion : pas d’amélioration significative par rapport au modèle OLS réduit.
+  \item \textbf{Modèle~1 (toutes les variables)}  
+    \begin{itemize}
+      \item MSE = 0,4963  
+      \item MAE = 0,5569  
+    \end{itemize}
+
+  \item \textbf{Modèle~2 (\texttt{Age}, \texttt{Height}, \texttt{Avg\_BPM}, \texttt{Fat\_Percentage})}  
+    \begin{itemize}
+      \item MSE = 0,5000  
+      \item MAE = 0,5595  
+    \end{itemize}
 \end{itemize}
+
+Visuellement, les nuages de points \emph{prédictions vs. valeurs réelles} pour les deux modèles se superposent presque parfaitement sur la droite d’identité, montrant une dispersion similaire autour de celle-ci.
+
+\bigskip
+
+\noindent\textbf{Interprétation :}  
+Le modèle réduit (Modèle~2), composé de seulement quatre prédicteurs, présente une augmentation très légère de l’erreur quadratique moyenne (+0,0037) et de l’erreur absolue moyenne (+0,0026) par rapport au modèle complet. Cette perte minime de précision est largement compensée par la simplicité, la robustesse et la facilité d’interprétation offertes par un nombre réduit de variables. Ainsi, le Modèle~2 constitue un compromis optimal entre performance prédictive et parcimonie.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\linewidth]{prediction.png}
+  \caption{Comparaison des calories brûlées prédites par les deux modèles}
+\end{figure}
+
+\subsection{Équation de prédiction et interprétation des coefficients}
+
+L’équation du modèle final s’écrit :
+\begin{multline*}
+\widehat{\text{Calories\_Burned}}
+=989{,}14-3{,}74\,\text{Age}
+-120{,}56\,\text{Height (m)}
++6{,}47\,\text{Avg\_BPM}\\
+-26{,}48\,\text{Fat\_Percentage}.
+\end{multline*}
+
+\paragraph{Intercept (\(\beta_0 = 989{,}14\))}  
+Valeur prédite lorsque toutes les variables explicatives sont nulles. Ici, l’interprétation n’est pas réaliste (âge = 0, taille = 0 m…), mais cet intercept permet d’ajuster correctement le modèle.
+
+\paragraph{Âge (\(\beta_1 = -3{,}74\))}  
+Chaque année supplémentaire entraîne en moyenne une diminution de 3,74 kcal, toutes choses égales par ailleurs.
+
+\paragraph{Taille (\(\beta_2 = -120{,}56\))}  
+Un mètre de plus est associé à environ 120,56 kcal en moins. Cette valeur contre-intuitive peut résulter d’une corrélation avec d’autres variables (multicolinéarité), à vérifier via la matrice de corrélation ou le VIF.
+
+\paragraph{Fréquence cardiaque moyenne (\(\beta_3 = +6{,}47\))}  
+Chaque battement par minute (BPM) supplémentaire augmente la dépense d’environ 6,47 kcal, ce qui reflète l’effet direct de l’intensité de l’exercice.
+
+\paragraph{Pourcentage de masse grasse (\(\beta_4 = -26{,}48\))}  
+Un point de pourcentage de masse grasse en plus correspond à une baisse de ~26,48 kcal, probablement en lien avec un métabolisme de base plus faible chez les sujets plus gras.
 
 \section{Conclusion}
 En conclusion, ce travail démontre que trois variables clés suffisent à expliquer près de 50 \% de la variabilité de la dépense calorique en séance de sport, facilitant l’interprétation et le déploiement du modèle. Les coefficients standardisés montrent que la fréquence cardiaque moyenne est le prédicteur le plus influent, suivi négativement par le pourcentage de masse grasse et l’âge. Ces conclusions offrent une base statistique solide pour adapter les programmes d’entraînement en fonction du profil physiologique des pratiquants. 
