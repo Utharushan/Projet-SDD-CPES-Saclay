@@ -68,7 +68,7 @@ lors de séances de sport à partir du \href{https://www.kaggle.com/datasets/val
 Après nettoyage et standardisation des variables continues (âge, poids, IMC, fréquence cardiaque, etc.),
 plusieurs modèles de régression linéaire multiple ont été ajustés, diagnostiqués et comparés
 via AIC, BIC et validation croisée. Les résultats soulignent les variables les plus influentes
-et aboutissent à un modèle parcimonieux expliquant plus de 70\% de la variance de la dépense
+et aboutissent à un modèle parcimonieux expliquant plus de 50\% de la variance de la dépense
 calorique. Les diagnostics (résidus, leverage, distance de Cook, VIF) confirment la validité
 des hypothèses de régression, et la conclusion propose des recommandations pour un entraînement
 personnalisé.
@@ -86,7 +86,7 @@ personnalisé.
 % 1. Introduction
 %====================
 \section{Introduction}
-Le choix du \emph{Gym Members Exercise Dataset} se fonde sur son jeu de 973 sessions riche et homogène, et sur son taux d’usability élevé, qui facilite l’importation et l’analyse des données. Le sport constitue un sujet d’intérêt pour le groupe, et, alors que deux d’entre nous suivent la spécialité « santé », nous souhaitons quantifier l’influence des paramètres continus — âge, poids, IMC, fréquence cardiaque moyenne, pourcentage de masse grasse — sur le nombre de calories brûlées pendant une séance.
+Le choix du \emph{Gym Members Exercise Dataset} se fonde sur son jeu de 973 sessions riche et homogène, et sur son taux d’usability élevé, qui facilite l’importation et l’analyse des données. Le sport constitue un sujet d’intérêt pour le groupe, et, alors que deux d’entre nous suivent la spécialité « santé », nous souhaitons quantifier l’influence des paramètres continus (âge, poids, IMC, fréquence cardiaque moyenne, pourcentage de masse grasse) sur le nombre de calories brûlées pendant une séance.
 
 Cette étude s’organise en trois volets : (1) un prétraitement des données pour ne conserver que les variables continues pertinentes et assurer leur comparabilité, (2) une modélisation par régression linéaire multiple avec sélection de variables selon leur significativité et les critères d’information (AIC, BIC), (3) des diagnostics détaillés (résidus, leverage, distance de Cook, VIF) et une validation croisée k–fold pour évaluer la robustesse prédictive du modèle. Nous terminons par une discussion des résultats et des recommandations pour adapter les entraînements en fonction des profils physiologiques identifiés.
 
@@ -231,22 +231,78 @@ Test F global de Fisher partiel pour regrouper les variables non-significatives 
   \caption{QQ-plot des résidus studentisés du modèle final}
 \end{figure}
 
+\section{Sélection de modèles supplémentaires}
 
-\section{Validation croisée et régularisation}
+\subsection{Vérification de la multicolinéarité (VIF)}
+Après standardisation, les facteurs d'inflation de la variance (VIF) sont calculés pour chaque prédicteur :
 
-\subsection{Régularisation}
-Des modèles de régression pénalisée (Ridge et Lasso) sont également testés :
+\begin{table}[H]
+\centering
+\caption{VIF des variables explicatives}
+\begin{tabular}{l r}
+\toprule
+Variable & VIF \\
+\midrule
+const & 1.00 \\
+Age & 1.01 \\
+Weight (kg) & 71.43 \\
+Height (m) & 20.49 \\
+Max\_BPM & 1.01 \\
+Avg\_BPM & 1.01 \\
+Resting\_BPM & 1.01 \\
+Fat\_Percentage & 1.53 \\
+Water\_Intake & 1.85 \\
+BMI & 63.95 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sur la base de ces résultats, \texttt{Weight} et \texttt{Height} sont retirés pour stabiliser le modèle.
+
+\subsection{Modèle sans variables colinéaires}
+Le modèle réajusté inclut : Age, Avg\_BPM, Resting\_BPM, Fat\_Percentage, Water\_Intake, BMI.
 \begin{itemize}
-  \item Sélection de l’hyperparamètre $\alpha$ par validation croisée interne.
-  \item Comparaison du MSE moyen avec les modèles OLS.
-  \item Conclusion : la régularisation apporte un gain marginal, confirmant la stabilité du modèle linéaire.
+\item $R^2 = 0{,}498$, $R^2_{\text{ajusté}} = 0{,}495$
+\item VIF < 2 pour toutes les variables.
 \end{itemize}
 
+\subsection{Modèle réduit par élimination pas-à-pas}
+Une procédure de ``backward elimination'' retire simultanément Resting\_BPM, Water\_Intake et BMI (p > 0,10). Le modèle final retient :
+\begin{itemize}
+\item Age, Avg\_BPM, Fat\_Percentage
+\end{itemize}
+Avec :
+\begin{itemize}
+\item $R^2 = 0{,}497$, AIC = 2101, BIC = 2120
+\item RMSE = 0{,}70, MAE = 0{,}52
+\end{itemize}
+
+\section{Recherche exhaustive et comparaison de modèles}
+Une recherche exhaustive sur tous les sous-ensembles de variables permet de vérifier la robustesse de la sélection :
+\begin{itemize}
+\item 511 combinaisons évaluées par AIC, BIC, $R^2$, $R^2_{\text{ajusté}}$.
+\item Le meilleur modèle à 3 variables (Age, Avg\_BPM, Fat\_Percentage) présente un AIC minimal ($\sim$2098) et un $R^2_{\text{ajusté}}$ optimal ($\sim$0,499).
+\end{itemize}
+
+\section{Validation croisée 5-fold et régularisation}
+
+\subsection{Validation croisée}
+Validation croisée 5-fold sur les modèles complet, sans colinéarité et réduit :
+\begin{itemize}
+\item Scores moyens de MSE, MAE, $R^2$ très proches entre complet et réduit.
+\item Écart-type faible, confirmant la stabilité du modèle réduit.
+\end{itemize}
+
+\subsection{Ridge et Lasso}
+Modèles pénalisés ajustés avec sélection de $\alpha$ par validation croisée interne :
+\begin{itemize}
+\item Ridge optimal : $\alpha \approx 1{,}0$, MSE moyen $\sim$0,48
+\item Lasso optimal : $\alpha \approx 0{,}1$, MSE moyen $\sim$0,49
+\item Conclusion : pas d’amélioration significative par rapport au modèle OLS réduit.
+\end{itemize}
 
 \section{Conclusion}
 En conclusion, ce travail démontre que trois variables clés suffisent à expliquer près de 50 \% de la variabilité de la dépense calorique en séance de sport, facilitant l’interprétation et le déploiement du modèle. Les coefficients standardisés montrent que la fréquence cardiaque moyenne est le prédicteur le plus influent, suivi négativement par le pourcentage de masse grasse et l’âge. Ces conclusions offrent une base statistique solide pour adapter les programmes d’entraînement en fonction du profil physiologique des pratiquants. 
 
 \newpage
-\printbibliography
 \end{document}
-
