@@ -97,7 +97,3 @@ Rapport_Projet_SDD_…Tharushan.pdf   # Version PDF du rapport
 * **Rémi Malapert** : remi.malapert@hec.edu
 * **Othmane Nammous** : othmane.nammous@hec.edu
 * **Tharushan Uthayakumar** : tharushan.uthayakumar@hec.edu 
-
----
-
-© 2025 Projet SDD — CPES2 Sciences des Données, Université Paris-Saclay / Institut Polytechnique de Paris / HEC Paris.
